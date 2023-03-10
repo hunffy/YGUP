@@ -20,12 +20,11 @@ const Login: React.FC = () => {
     const goHome = () => {
         navigate('/')
     };
-    const goIdsearch = () => {
-        navigate('/Idsearch')
+
+    const goUser_list = () => {
+        navigate('/user_list')
     };
-    const goPwsearch = () => {
-        navigate('/Pwsearch')
-    };
+    
     const goJoin = () => {
         navigate('/Join')
     };
@@ -74,8 +73,12 @@ const Login: React.FC = () => {
             body: { id: id, pw: pw }
         })
         .then(function(response) {
-            dispatch(set({type: 'admin', id: id}))
-            goHome()
+            dispatch(set({type: String(response.data.uno), id: id}))
+            if (response.data.uno == 0){
+                goUser_list()
+            } else{
+                goHome()
+            }
         })
         .catch(function(error) {
             alert('로그인정보를 확인해 주세요')
@@ -107,7 +110,7 @@ const Login: React.FC = () => {
                 <br/>
 
                 <TextField id="login-id" onChange={(newValue) => idChange(newValue.target.value)} label="아이디" variant="outlined" size="small" margin="normal"/>
-                <TextField id="login-pw" onChange={(newValue) => pwChange(newValue.target.value)} label="비밀번호" variant="outlined" size="small"  margin="normal"/>
+                <TextField id="login-pw" type='password' onChange={(newValue) => pwChange(newValue.target.value)} label="비밀번호" variant="outlined" size="small"  margin="normal"/>
                 <br/>
 
                 <Button variant="contained" 
@@ -140,7 +143,7 @@ const Login: React.FC = () => {
                                 }} 
                             onClick={() => { goJoin() }}
                     >
-                        회원 가입
+                        회원가입
                     </Button>
                 </Stack>
             </Box>

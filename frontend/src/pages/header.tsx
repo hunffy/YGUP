@@ -11,36 +11,58 @@ import { RootState } from '../reducers/index'
 import { set } from '../reducers/userReducer'
 
 const Header: React.FC = () => {
+  const currentUser = useSelector((state: RootState) => state.userReducer.type);
+
   const navigate = useNavigate();
 
   const goHome = () => {
     navigate('/')
   };
+
   const goCompany = () => {
-    navigate('/board_list')
+      navigate('/board_list')
   };
-  const goMylist = () => {
-    navigate('/board_mylist')
+  
+  const goCllist = () => {
+    if(currentUser == '0'){
+      alert('관리자는 이용 할 수 없습니다.')
+    }
+    else if(currentUser == '1'){
+      navigate('/board_cl')
+    }
+    else{
+      alert('로그인 후 이용해주세요.')
+      goLogin()
+    }
   };
+
   const goPredict = () => {
     navigate('/board_predict')
   };
+
   const goUserinfo = () => {
-    navigate('/userinfo')
+    if(currentUser == '0'){
+      navigate('/user_list')
+    }
+    else if(currentUser == '1'){
+      navigate('/bookmark')
+    }
+    else{
+      alert('로그인 후 이용해주세요')
+      goHome()
+    }
   };
-  const goJoin = () => {
-    navigate('/join')
-  };
+
   const goLogin = () => {
     navigate('/login')
   };
+
   const dispatch = useDispatch();
 
   const doLogOut = () => {
     dispatch(set({type: '', id: ''}));
+    goHome()
   };
-
-  const currentUser = useSelector((state: RootState) => state.userReducer.type);
 
   const LoginButton = () => {
     if(currentUser == ''){
@@ -49,7 +71,7 @@ const Header: React.FC = () => {
     else {
       return <Button variant="text" onClick={() => { doLogOut() }}>LogOut</Button>
     }
-  }
+  };
 
   return (
       <header className="App-header">
@@ -68,7 +90,7 @@ const Header: React.FC = () => {
               <Button variant="text" size="large" onClick={() => { goCompany() }}>기업</Button>
               </li>
               <li>
-              <Button variant="text" size="large" onClick={() => { goMylist() }}>자소서</Button>
+              <Button variant="text" size="large" onClick={() => { goCllist() }}>자소서</Button>
               </li>
               <li>
               <Button variant="text" size="large" onClick={() => { goPredict() }}>합격예측</Button>

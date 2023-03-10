@@ -1,11 +1,13 @@
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import User from '../components/user';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import SearchIcon from '@mui/icons-material/Search';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import InputBase from '@mui/material/InputBase';
 import { BaseUrl } from '../../util/axiosApi';   
 import axios from 'axios';
 import { useQuery } from 'react-query';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { Box, 
          Tab, 
          Tabs,
@@ -21,9 +23,15 @@ import { Box,
          TableHead, 
          TableRow,
          Button,
-         CircularProgress} from '@mui/material';
+         CircularProgress,
+         Typography,
+         alpha} from '@mui/material';
+import { useSelector,useDispatch } from 'react-redux';
+import { RootState } from '../../reducers'
+import { set } from '../../reducers/modalReducer'
+import BasicModal from '../components/basicModal';
 
-         
+
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
  [`&.${tableCellClasses.head}`]: {
    backgroundColor: theme.palette.common.black,
@@ -42,12 +50,13 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
       '&:last-child td, &:last-child th': {
      border: 0,
          },
-           }));
+           }));   
+     
          
 const Company_Basic_List: React.FC = () => {
 
   const { state } = useLocation();
-  const [value, setValue] = React.useState(state); 
+  const [value, setValue] = React.useState(state);  
   
   const navigate = useNavigate();
 
@@ -57,16 +66,17 @@ const Company_Basic_List: React.FC = () => {
   const goCompany_basic_list = (state: number) => {
         navigate('/company_basic_list',  { state: state })
   };
-  const goInfo_update = () => {
-      navigate('/info_update')
-  };
-
-  const goInfo_delete = () => {
-    navigate('/info_delete')
-  }
   const goWrite = () => {
     navigate('/write')
   }
+
+  const currentModal = useSelector((state: RootState) => state.modalReducer.state);
+
+  const goInfo = (data: string) => {
+    navigate('/info',{
+       state :{ data: data }
+       })
+  };
 
   function a11yProps(index: number) {
       return {
@@ -89,6 +99,7 @@ const getCompanyList = async ()=>{
       body: { uno: 0 }
   })
   return data
+  
 }
 
 const { isLoading, data, error } = useQuery('getCompanyList', getCompanyList);
@@ -108,56 +119,55 @@ else{
         value={value}
         onChange={handleChange}
         aria-label="Vertical tabs example"
-        sx={{ borderRight: 1, borderColor: 'divider' }}
-      >
-         <Tab label="회원 목록" value={0}  {...a11yProps(0)} onClick={() => { goUser_list(); }} />
-         <Tab label="기업 목록" value={1}  {...a11yProps(1)} onClick={() => { goCompany_basic_list(1); }} />
+        sx={{ borderRight: 1, borderColor: 'divider' }}>
+         <Tab label="회원 목록" value={0} {...a11yProps(0)} onClick={() => { goUser_list(); }} />
+         <Tab label="기업 목록" value={1} {...a11yProps(1)} onClick={() => { goCompany_basic_list(1); }} />
       </Tabs>
       </Box>
       <Box sx={{ width: '100%' }} >
-        <Box className='admin_appbar' sx={{ width: '100%', borderBottom: 1, borderColor: 'divider', marginBottom:1  }}>
-        <Button 
-            variant="contained" 
-            size="small" 
-            onClick={() => { goWrite() }}
-            sx={{ width: 100, 
-                  mt:3, 
-                  mx:'auto', 
-                  color:'black', 
-                  backgroundColor: '#ffffff', 
-                  borderColor:'#ffffff',
-                  margin:1}} >
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
+              <Typography variant="h5" marginTop={3} marginLeft={3} gutterBottom>
+                기업 목록
+              </Typography>
+              <Button variant="contained" startIcon={<AddOutlinedIcon/>} onClick={() => { goWrite(); }}> 
             글쓰기
           </Button>
-      </Box>
-        <Paper sx={{ width: '100%', mb: 2 }} >
+        </Stack>
+        <Paper sx={{ width: '100%', mb: 2, marginTop:5 ,overflow: 'hidden', elevation:3 }} >
+        <Stack direction="row">
+        <Box sx={{marginLeft:3, marginTop:2, marginBottom:2 }}>
+          <Stack direction="row">
+          <input type="text" className='company_list' id="keyword"/>
+            <button type="button" className="search">
+                검색
+            </button>
+        </Stack>
+          </Box>
+        </Stack>
     <TableContainer component={Paper}>
       <Table sx={{ minWidth: 700 }} aria-label="customized table">
         <TableHead>
           <TableRow>
             <StyledTableCell>기업명</StyledTableCell>
-            <StyledTableCell align="right">위치</StyledTableCell>
-            <StyledTableCell align="right">키워드</StyledTableCell>
-            <StyledTableCell align="right"> </StyledTableCell>
-            <StyledTableCell align="right"> </StyledTableCell>
+            <StyledTableCell>위치</StyledTableCell>
+            <StyledTableCell></StyledTableCell>
+            <StyledTableCell>키워드</StyledTableCell>
+            <StyledTableCell> </StyledTableCell>
+            <StyledTableCell> </StyledTableCell>
+            <StyledTableCell> </StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-        {Object.keys(data).map((value:any, index:any) => (
-            <StyledTableRow key={data[value]['cname']}>
-              <StyledTableCell component="th" scope="row">{data[value]['cname']}</StyledTableCell>
-              <StyledTableCell align="right">{data[value]['address']}</StyledTableCell>
-              <StyledTableCell align="right">{data[value]['keyword']}</StyledTableCell>
-              <StyledTableCell align="right">
-                <IconButton>
-                  <EditIcon fontSize="small"  onClick={() => { goInfo_update(); }}/>
-                </IconButton>
-                <IconButton>
-                  <DeleteIcon fontSize="small"  onClick={() => { goInfo_delete(); }}/>
-                </IconButton>
+        {Object.keys(data).map((result:any, index:any) => (
+            <StyledTableRow hover role="checkbox" key={data[result]['cname']} onClick={() => { goInfo(data[result]['cname']) }}>
+              <StyledTableCell component="th" scope="row">{data[result]['cname']}</StyledTableCell>
+              <StyledTableCell>{data[result]['address']}</StyledTableCell>
+              <StyledTableCell>{ data[result]['keyword'].split(',')[0]}</StyledTableCell>
+              <StyledTableCell> { data[result]['keyword'].split(',')[1]} </StyledTableCell>
+              <StyledTableCell>{ data[result]['keyword'].split(',')[2]} </StyledTableCell>
+              <StyledTableCell> 
               </StyledTableCell>
-              <StyledTableCell align="right">
-              </StyledTableCell>
+              <StyledTableCell> </StyledTableCell>
             </StyledTableRow>
           ))}
         </TableBody>

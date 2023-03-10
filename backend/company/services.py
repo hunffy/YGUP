@@ -13,11 +13,13 @@ def create_company(data):
         return {"message": f"only admin can create"}, 505
     cno = {'cno': str(uuid.uuid1())}
     data['body'].get('data').update(cno)
+    keyword = {'keyword': str(uuid.uuid1())}
+    data['body'].get('data').update(keyword)
     #북마크 테이블이 완성 되면 북마크 조회해서 값 채워 넣기
     company = Company(cname=data['body'].get('data').get('cname'), cno=data['body'].get('data').get('cno'),
-    keyword=data['body'].get('data').get('keyword'),
-    address=data['body'].get('data').get('address'),
-    sales=data['body'].get('data').get('sales'), owner=data['body'].get('data').get('owner'),info=data['body'].get('data').get('cname'),pay=data['body'].get('data').get('pay'),
+    keyword=data['body'].get('data').get('keyword'), address=data['body'].get('data').get('address'),
+    sales=data['body'].get('data').get('sales'), owner=data['body'].get('data').get('owner'),
+    info=data['body'].get('data').get('cname'),pay=data['body'].get('data').get('pay'),
     courl=data['body'].get('data').get('courl'),
     resign=data['body'].get('data').get('resign'), form=data['body'].get('data').get('form'), bookmarkcnt=0,
     readcnt=0)
@@ -27,12 +29,17 @@ def create_company(data):
 
 def update_company(data):
     """Update company"""
-    usertype = db.session.query(UserType).filter(UserType.type == data['uno']).first()
+    usertype = db.session.query(UserType).filter(UserType.type == data['body'].get('data').get('uno')).first()
     if usertype is None or usertype.type != 'admin':
-        return {"message": f"only admin can update"}, 505
+       return {"message": f"only admin can update"}, 505
 
-    res = db.session.query(Company).filter(Company.cname == data['cname']).update(
-        {"cname": data['cname'], "keyword": data['keyword'], "wcloud_url": data['wcloud_url'], "address": data['address'], "sales": data['sales'], "owner": data['owner'], "info": data['info'], "pay": data['pay'], "courl": data['courl'], "logo_url": data['logo_url'], "resign": data['resign'], "form": data['form'], "bookmark": data['bookmark'], "readcnt":data['readcnt'] })
+    res = db.session.query(Company).filter(Company.cname == data['body'].get('data').get('cname')).update(
+        {"cname": data['body'].get('data').get('cname'),
+          "address": data['body'].get('data').get('address'),
+         "sales": data['body'].get('data').get('sales'), "owner": data['body'].get('data').get('owner'),
+         "info": data['body'].get('data').get('info'), "pay": data['body'].get('data').get('pay'),
+         "courl": data['body'].get('data').get('courl'),
+         "resign": data['body'].get('data').get('resign'), "form": data['body'].get('data').get('form') })
 
     if not res:
         return 'fail', 505
@@ -43,14 +50,14 @@ def update_company(data):
 
 def delete_company(data):
     """Delete Company"""
-    usertype = db.session.query(UserType).filter(UserType.type == data['body'].get('uno')).first()
-    if usertype is None or usertype.type != 'admin':
+    user_type = db.session.query(UserType).filter(UserType.uno == data['body'].get('uno')).first()
+    if user_type is None or user_type.type != 'admin':
         return {"message": f"only admin can delete"}, 505
 
     res = db.session.query(Company).filter(Company.cname == data['body'].get('cname')).all()
 
     if not res:
-        return 'fail', 505
+        return 'fail', 503
 
     for r in res:
         db.session.delete(r)
@@ -167,24 +174,23 @@ def rank_company(data):
 
 def read_company(data) :
     """Read Company"""
-    company = db.session.query(Company).filter(Company.cname == data['body'].get('cname')).all()
 
-    if not company:
-        return 'fail', 505
+    companies = db.session.query(Company).filter(Company.cname == data['body'].get('cname')).all()
+
+    if not companies:
+        return 'fail', 502
 
     result = {}
-    readcnt = company[0].readcnt
-    for data in company:
-        temp = data.__dict__
+    for company in companies:
+        # Extract company data and remove unnecessary attributes
+        temp = company.__dict__.copy()
         del temp['_sa_instance_state']
         del temp['cno']
+        readcnt = temp['readcnt'] + 1
+        del temp['readcnt']
+        # Update company read count and add to result dictionary
+        company.readcnt = readcnt
+        db.session.commit()
         result['company'] = temp
-        readcnt += 1
 
-    #########################조회수 + 1#########################
-
-    #db.session.close()
-    #db.session.query(Company).filter(Company.cname == data['cname']).update({"readcnt":readcnt})
-    #db.session.commit()
-
-    return {'result':result, 'readcnt':readcnt}, 200
+    return {'result': result}, 200
